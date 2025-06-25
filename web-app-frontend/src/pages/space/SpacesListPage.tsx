@@ -129,10 +129,10 @@ const SpacesListPage: React.FC = () => {
               tbody={{
                 data: spaces.map(space => {
                   return {
+                    spaceCode: space,
                     space: {
                       representation: <code>{space}</code>,
                       value: space,
-                      onClick: (_, cell) => navigate(`${contextPath}space/${cell}/`),
                       className: 'text-center'
                     },
                     actions: {
@@ -148,7 +148,8 @@ const SpacesListPage: React.FC = () => {
                         </ButtonGroup>
                     }
                   };
-                })
+                }),
+                rowBehavior: { handler: (row) => navigate(`${contextPath}space/${row['spaceCode']}/`) },
               }}
               loading={loading}
             />

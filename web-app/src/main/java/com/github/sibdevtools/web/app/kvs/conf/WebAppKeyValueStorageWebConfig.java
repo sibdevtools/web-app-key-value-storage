@@ -26,7 +26,7 @@ public class WebAppKeyValueStorageWebConfig implements WebMvcConfigurer {
     public void addViewControllers(ViewControllerRegistry registry) {
         registry.addViewController("/web/app/key-value-storage/ui/")
                 .setViewName("forward:/web/app/key-value-storage/ui/index.html");
-        registry.addViewController("/web/app/key-value-storage/ui/service/**")
+        registry.addViewController("/web/app/key-value-storage/ui/space/**")
                 .setViewName("forward:/web/app/key-value-storage/ui/index.html");
     }
 }

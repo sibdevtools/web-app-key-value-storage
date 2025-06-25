@@ -8,6 +8,6 @@ import java.io.Serializable;
  */
 public record SetValuePlRq(
         Serializable value,
-        long expiredAt
+        Long expiredAt
 ) {
 }

@@ -21,17 +21,17 @@ import java.util.Set;
 @Getter
 @Component
 @LocalizationJsonSource(
-        systemCode = "WEB.APP.MOCKS",
+        systemCode = "WEB.APP.KEY-VALUE-STORAGE",
         path = "classpath:/web/app/key-value-storage/content/localizations/eng.json",
         iso3Code = "eng"
 )
 @LocalizationJsonSource(
-        systemCode = "WEB.APP.MOCKS",
+        systemCode = "WEB.APP.KEY-VALUE-STORAGE",
         path = "classpath:/web/app/key-value-storage/content/localizations/rus.json",
         iso3Code = "rus"
 )
 public class KeyValueStorageWebApplication implements WebApplication {
-    private static final LocalizationSourceId LOCALIZATION_SOURCE_ID = new LocalizationSourceId("WEB.APP.MOCKS");
+    private static final LocalizationSourceId LOCALIZATION_SOURCE_ID = new LocalizationSourceId("WEB.APP.KEY-VALUE-STORAGE");
 
     @Value("${web.app.key-value-storage.version}")
     private String version;
