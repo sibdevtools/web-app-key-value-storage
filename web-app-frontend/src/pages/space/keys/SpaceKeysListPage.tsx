@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, Button, ButtonGroup, Col, Container, Row } from 'react-bootstrap';
-import { Delete01Icon } from 'hugeicons-react';
+import { ArrowLeft01Icon, Delete01Icon } from 'hugeicons-react';
 import { contextPath } from '../../../const/common.const';
 import { useNavigate, useParams } from 'react-router-dom';
 import { deleteKey, getKeys, getValue, ValueHolder } from '../../../api/api';
@@ -46,27 +46,32 @@ const SpaceKeysListPage: React.FC = () => {
       return <Alert variant="danger">{error}</Alert>;
     }
 
+    const toLocalDate = (amount: number | undefined | null): string => {
+      if(!amount) {
+        return "-"
+      }
+      const d = new Date(amount);
+      return d.toISOString()
+    }
+
     return (
       <Container>
         <Row>
-          <Col xs={6}>
+          <Col xs={4}>
             <Row>
-              <Col xs={6}>Created At</Col>
-              <Col xs={6}>{data?.meta.createdAt}</Col>
+              <Col xs={4}>Created At</Col>
+              <Col xs={8}>{toLocalDate(data?.meta.createdAt)}</Col>
             </Row>
             <Row>
-              <Col xs={6}>Modified At</Col>
-              <Col xs={6}>{data?.meta.modifiedAt}</Col>
+              <Col xs={4}>Modified At</Col>
+              <Col xs={8}>{toLocalDate(data?.meta.modifiedAt)}</Col>
             </Row>
             <Row>
-              <Col xs={6}>Expired At</Col>
-              <Col xs={6}>{data?.meta.expiredAt}</Col>
+              <Col xs={4}>Expired At</Col>
+              <Col xs={8}>{toLocalDate(data?.meta.expiredAt)}</Col>
             </Row>
           </Col>
-          <Col xs={6}>
-            <Row>
-              <p className={'text-center'}>Value</p>
-            </Row>
+          <Col xs={8}>
             <Row>
               <textarea
                 id={`value-${keyName}`}
@@ -159,7 +164,16 @@ const SpaceKeysListPage: React.FC = () => {
   return (
     <Container className="mt-4 mb-4">
       <Row>
-        <Col md={{ span: 6, offset: 3 }}>
+        <Col md={{ span: 1, offset: 2 }} className={'mb-2'}>
+          <Button
+            variant={'outline-primary'}
+            onClick={() => navigate(contextPath)}
+            title={'Back'}
+          >
+            <ArrowLeft01Icon />
+          </Button>
+        </Col>
+        <Col md={6}>
           <span className={'h2'}>Space {space} keys</span>
         </Col>
       </Row>
@@ -177,7 +191,7 @@ const SpaceKeysListPage: React.FC = () => {
           )}
           {!error && (
             <CustomTable
-              table={{ responsive: true }}
+              table={{ responsive: true, striped: true }}
               thead={{
                 columns: {
                   key: {
@@ -210,7 +224,8 @@ const SpaceKeysListPage: React.FC = () => {
                           <Delete01Icon />
                         </Button>
                       </ButtonGroup>
-                    )
+                    ),
+                    className: 'text-center'
                   }
                 })),
                 rowBehavior: {

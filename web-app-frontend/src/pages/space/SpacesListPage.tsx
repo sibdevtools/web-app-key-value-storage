@@ -64,6 +64,7 @@ const SpacesListPage: React.FC = () => {
         space: space,
         key: 'to-delete',
         value: "test",
+        expiredAt: 0
       });
       if (response.status !== 200 || !response.data.success) {
         setMinorError('Failed to add space');
