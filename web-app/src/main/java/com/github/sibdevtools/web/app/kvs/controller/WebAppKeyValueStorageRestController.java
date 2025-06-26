@@ -2,7 +2,6 @@ package com.github.sibdevtools.web.app.kvs.controller;
 
 import com.github.sibdevtools.common.api.rs.StandardBodyRs;
 import com.github.sibdevtools.common.api.rs.StandardRs;
-import com.github.sibdevtools.session.api.dto.ValueMeta;
 import com.github.sibdevtools.session.api.rq.SetValueRq;
 import com.github.sibdevtools.session.api.service.KeyValueStorageService;
 import com.github.sibdevtools.web.app.kvs.api.GetValuePlRs;
@@ -21,6 +20,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.chrono.ChronoZonedDateTime;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Optional;
 
 @Slf4j
@@ -31,6 +31,8 @@ import java.util.Optional;
 )
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class WebAppKeyValueStorageRestController {
+    private final Base64.Encoder encoder = Base64.getEncoder();
+
     private final KeyValueStorageService keyValueStorageService;
 
     @GetMapping(
@@ -70,7 +72,7 @@ public class WebAppKeyValueStorageRestController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public StandardBodyRs<ValueMeta> setValue(
+    public StandardBodyRs<ValueMetaRs> setValue(
             @PathVariable("space") String space,
             @PathVariable("key") String key,
             @RequestBody SetValuePlRq plRq
@@ -83,7 +85,13 @@ public class WebAppKeyValueStorageRestController {
                 .expiredAt(expiredAt == null ? null : ZonedDateTime.ofInstant(Instant.ofEpochMilli(expiredAt), ZoneOffset.UTC))
                 .build();
         val rs = keyValueStorageService.set(rq);
-        return new StandardBodyRs<>(rs.getBody());
+        val meta = rs.getBody();
+        val metaRs = ValueMetaRs.builder()
+                .createdAt(meta.getCreatedAt().toInstant().toEpochMilli())
+                .modifiedAt(meta.getModifiedAt().toInstant().toEpochMilli())
+                .expiredAt(expiredAt)
+                .build();
+        return new StandardBodyRs<>(metaRs);
     }
 
     @GetMapping(
@@ -103,7 +111,7 @@ public class WebAppKeyValueStorageRestController {
                                     .map(Instant::toEpochMilli)
                                     .orElse(null);
                             return ValueHolderRs.builder()
-                                    .value(it.getValue())
+                                    .value(it.getValue() == null ? null : encoder.encodeToString(it.getValue()))
                                     .meta(
                                             ValueMetaRs.builder()
                                                     .createdAt(meta.getCreatedAt().toInstant().toEpochMilli())

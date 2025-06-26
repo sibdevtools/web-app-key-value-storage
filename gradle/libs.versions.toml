@@ -10,9 +10,9 @@ common-api = "0.0.2"
 localization-api = "0.0.7"
 error-api = "0.0.16"
 web-app-api = "0.0.6"
-key-value-storage-api = "0.0.3"
+key-value-storage-api = "0.0.4"
 
-key-value-storage-embedded = "0.0.2"
+key-value-storage-embedded = "0.0.3"
 
 [libraries]
 common-api = { module = "com.github.sibdevtools:api-common", version.ref = "common-api" }

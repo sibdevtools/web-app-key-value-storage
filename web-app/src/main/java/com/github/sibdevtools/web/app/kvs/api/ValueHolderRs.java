@@ -14,6 +14,6 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ValueHolderRs implements Serializable {
-    private Object value;
+    private String value;
     private ValueMetaRs meta;
 }

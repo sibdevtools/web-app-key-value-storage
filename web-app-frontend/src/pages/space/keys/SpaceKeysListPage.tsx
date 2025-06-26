@@ -47,12 +47,12 @@ const SpaceKeysListPage: React.FC = () => {
     }
 
     const toLocalDate = (amount: number | undefined | null): string => {
-      if(!amount) {
-        return "-"
+      if (!amount) {
+        return '-';
       }
       const d = new Date(amount);
-      return d.toISOString()
-    }
+      return d.toISOString();
+    };
 
     return (
       <Container>
@@ -174,7 +174,7 @@ const SpaceKeysListPage: React.FC = () => {
           </Button>
         </Col>
         <Col md={6}>
-          <span className={'h2'}>Space {space} keys</span>
+          <span className={'h2'}>Space <code>{space}</code> keys</span>
         </Col>
       </Row>
       <Row className="mt-4">
