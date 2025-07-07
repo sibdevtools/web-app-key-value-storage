@@ -76,7 +76,20 @@ const SpaceKeysListPage: React.FC = () => {
               <textarea
                 id={`value-${keyName}`}
                 className={'form-control'}
-                value={data?.value} />
+                value={data?.value}
+                onChange={(e) => {
+                  const cache = { ...valuesCache };
+                  cache[keyName] = {
+                    ...cacheItem,
+                    data: {
+                      ...data,
+                      value: e.target.value,
+                    } as ValueHolder,
+                  };
+                  setValuesCache(cache);
+                }
+                }
+              />
             </Row>
           </Col>
         </Row>
@@ -234,7 +247,12 @@ const SpaceKeysListPage: React.FC = () => {
                     return key ? <ExpandableRowContent keyName={key} /> : null;
                   }
                 },
-                pageSize: 50
+                pagination: {
+                  pageSize: 50,
+                  buttons: {
+                    size: 'sm'
+                  }
+                }
               }}
               loading={loading}
             />

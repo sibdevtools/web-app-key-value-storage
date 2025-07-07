@@ -59,7 +59,7 @@ export const setValue = (rq: SetValueRq) => api.post<SetValueRs>(
 );
 
 export interface ValueHolder {
-  value: any;
+  value: string;
   meta: ValueMeta;
 }
 
