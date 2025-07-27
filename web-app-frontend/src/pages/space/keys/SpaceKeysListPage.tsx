@@ -1,15 +1,16 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Button, ButtonGroup, Col, Container, Row } from 'react-bootstrap';
-import { ArrowLeft01Icon, Delete01Icon } from 'hugeicons-react';
+import { ArrowLeft01Icon, Delete01Icon, FloppyDiskIcon } from 'hugeicons-react';
 import { contextPath } from '../../../const/common.const';
 import { useNavigate, useParams } from 'react-router-dom';
-import { deleteKey, getKeys, getValue, ValueHolder } from '../../../api/api';
+import { deleteKey, getKeys, getValue, setValue, ValueHolder } from '../../../api/api';
 import { CustomTable, Loader } from '@sibdevtools/frontend-common';
 import { CustomTableParts } from '@sibdevtools/frontend-common/dist/components/custom-table/types';
 
 interface CachedValue {
   data?: ValueHolder;
   loading: boolean;
+  changed: boolean;
   error?: string;
 }
 
@@ -60,10 +61,14 @@ const SpaceKeysListPage: React.FC = () => {
         return;
       }
       const newValue = textareaRef.current.value;
+      if (newValue === data?.value) {
+        return;
+      }
       setValuesCache(prev => ({
         ...prev,
         [keyName]: {
           ...prev[keyName],
+          changed: true,
           data: {
             ...prev[keyName].data,
             value: newValue,
@@ -135,6 +140,7 @@ const SpaceKeysListPage: React.FC = () => {
           ...prev,
           [key]: {
             data: response.data.body,
+            changed: false,
             loading: false
           }
         }));
@@ -143,6 +149,7 @@ const SpaceKeysListPage: React.FC = () => {
           ...prev,
           [key]: {
             loading: false,
+            changed: false,
             error: 'Failed to fetch value'
           }
         }));
@@ -153,11 +160,48 @@ const SpaceKeysListPage: React.FC = () => {
         ...prev,
         [key]: {
           loading: false,
+          changed: false,
           error: 'Failed to fetch value'
         }
       }));
     }
   }, [space]);
+
+  const handleUpdate = async (key: string) => {
+    const cachedValue = valuesCache[key];
+    const value = cachedValue.data?.value;
+    if (value === undefined) {
+      return;
+    }
+
+    try {
+      const response = await setValue({
+        space,
+        key,
+        value: value,
+        expiredAt: cachedValue.data?.meta.expiredAt,
+      });
+      if (response.status !== 200 || !response.data.success) {
+        setMinorError(`Failed to update key: ${key}`);
+        return;
+      }
+
+      setValuesCache(prev => ({
+        ...prev,
+        [key]: {
+          data: {
+            value: value,
+            meta: response.data.body,
+          },
+          loading: false,
+          changed: false,
+        }
+      }));
+    } catch (error) {
+      console.error(`Failed to update key: ${key}`, error);
+      setMinorError(`Failed to update key: ${key}`);
+    }
+  };
 
   const handleDelete = async (key: string) => {
     if (!window.confirm('Are you sure?')) return;
@@ -243,6 +287,14 @@ const SpaceKeysListPage: React.FC = () => {
                   actions: {
                     representation: (
                       <ButtonGroup>
+                        <Button
+                          variant={'outline-primary'}
+                          onClick={() => handleUpdate(key)}
+                          disabled={!valuesCache[key]?.changed}
+                          title={'Update'}
+                        >
+                          <FloppyDiskIcon />
+                        </Button>
                         <Button
                           variant={'danger'}
                           onClick={() => handleDelete(key)}
