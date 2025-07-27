@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Button, ButtonGroup, Col, Container, Row } from 'react-bootstrap';
 import { ArrowLeft01Icon, Delete01Icon } from 'hugeicons-react';
 import { contextPath } from '../../../const/common.const';
@@ -31,6 +31,7 @@ const SpaceKeysListPage: React.FC = () => {
   const ExpandableRowContent: React.FC<{ keyName: string }> = ({ keyName }) => {
     const cacheItem = valuesCache[keyName] || { loading: false };
     const { data, loading, error } = cacheItem;
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
       if (!data && !loading && !error) {
@@ -54,6 +55,23 @@ const SpaceKeysListPage: React.FC = () => {
       return d.toISOString();
     };
 
+    const handleBlur = () => {
+      if (!textareaRef.current) {
+        return;
+      }
+      const newValue = textareaRef.current.value;
+      setValuesCache(prev => ({
+        ...prev,
+        [keyName]: {
+          ...prev[keyName],
+          data: {
+            ...prev[keyName].data,
+            value: newValue,
+          } as ValueHolder,
+        },
+      }));
+    };
+
     return (
       <Container>
         <Row>
@@ -73,23 +91,13 @@ const SpaceKeysListPage: React.FC = () => {
           </Col>
           <Col xs={8}>
             <Row>
-              <textarea
-                id={`value-${keyName}`}
-                className={'form-control'}
-                value={data?.value}
-                onChange={(e) => {
-                  const cache = { ...valuesCache };
-                  cache[keyName] = {
-                    ...cacheItem,
-                    data: {
-                      ...data,
-                      value: e.target.value,
-                    } as ValueHolder,
-                  };
-                  setValuesCache(cache);
-                }
-                }
-              />
+            <textarea
+              ref={textareaRef}
+              id={`value-${keyName}`}
+              className={'form-control'}
+              defaultValue={data?.value}
+              onBlur={handleBlur}
+            />
             </Row>
           </Col>
         </Row>
@@ -131,7 +139,13 @@ const SpaceKeysListPage: React.FC = () => {
           }
         }));
       } else {
-        throw new Error('Failed to fetch value');
+        setValuesCache(prev => ({
+          ...prev,
+          [key]: {
+            loading: false,
+            error: 'Failed to fetch value'
+          }
+        }));
       }
     } catch (err) {
       console.error(`Failed to fetch value for key ${key}:`, err);
