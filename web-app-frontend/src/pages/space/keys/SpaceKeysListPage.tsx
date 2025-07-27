@@ -1,14 +1,16 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Button, ButtonGroup, Col, Container, Row } from 'react-bootstrap';
+import { Alert, Button, ButtonGroup, Col, Container, Form, Row } from 'react-bootstrap';
 import { ArrowLeft01Icon, Delete01Icon, FloppyDiskIcon } from 'hugeicons-react';
 import { contextPath } from '../../../const/common.const';
 import { useNavigate, useParams } from 'react-router-dom';
 import { deleteKey, getKeys, getValue, setValue, ValueHolder } from '../../../api/api';
 import { CustomTable, Loader } from '@sibdevtools/frontend-common';
 import { CustomTableParts } from '@sibdevtools/frontend-common/dist/components/custom-table/types';
+import { getViewRepresentation, viewRepresentationToBase64, ViewType } from '../../../utils/view';
 
 interface CachedValue {
   data?: ValueHolder;
+  viewType: ViewType;
   loading: boolean;
   changed: boolean;
   error?: string;
@@ -71,7 +73,7 @@ const SpaceKeysListPage: React.FC = () => {
           changed: true,
           data: {
             ...prev[keyName].data,
-            value: newValue,
+            value: viewRepresentationToBase64(cacheItem.viewType, newValue),
           } as ValueHolder,
         },
       }));
@@ -96,11 +98,27 @@ const SpaceKeysListPage: React.FC = () => {
           </Col>
           <Col xs={8}>
             <Row>
+              <Form.Select
+                value={cacheItem.viewType}
+                onChange={(e) => setValuesCache(prev => ({
+                  ...prev,
+                  [keyName]: {
+                   ...prev[keyName],
+                    viewType: e.target.value as ViewType,
+                  } as CachedValue,
+                }))}
+                required={true}
+              >
+                <option value={'base64'}>Base64</option>
+                <option value={'raw'}>Raw</option>
+              </Form.Select>
+            </Row>
+            <Row>
             <textarea
               ref={textareaRef}
               id={`value-${keyName}`}
               className={'form-control'}
-              defaultValue={data?.value}
+              defaultValue={getViewRepresentation(cacheItem.viewType, data?.value || '')}
               onBlur={handleBlur}
             />
             </Row>
@@ -130,7 +148,11 @@ const SpaceKeysListPage: React.FC = () => {
   const loadKeyValue = useCallback(async (key: string) => {
     setValuesCache(prev => ({
       ...prev,
-      [key]: { ...prev[key], loading: true, error: undefined }
+      [key]: {
+        ...prev[key],
+        loading: true,
+        error: undefined
+      }
     }));
 
     try {
@@ -140,6 +162,7 @@ const SpaceKeysListPage: React.FC = () => {
           ...prev,
           [key]: {
             data: response.data.body,
+            viewType: 'base64',
             changed: false,
             loading: false
           }
@@ -148,6 +171,7 @@ const SpaceKeysListPage: React.FC = () => {
         setValuesCache(prev => ({
           ...prev,
           [key]: {
+            viewType: 'base64',
             loading: false,
             changed: false,
             error: 'Failed to fetch value'
@@ -159,6 +183,7 @@ const SpaceKeysListPage: React.FC = () => {
       setValuesCache(prev => ({
         ...prev,
         [key]: {
+          viewType: 'base64',
           loading: false,
           changed: false,
           error: 'Failed to fetch value'
@@ -193,6 +218,7 @@ const SpaceKeysListPage: React.FC = () => {
             value: value,
             meta: response.data.body,
           },
+          viewType: 'base64',
           loading: false,
           changed: false,
         }
