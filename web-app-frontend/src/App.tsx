@@ -5,7 +5,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 
 import SpacesListPage from './pages/space/SpacesListPage';
 import { contextPath } from './const/common.const';
-import SpaceKeysListPage from './pages/space/keys/SpaceKeysListPage';
+import SpaceRecordsPage from './pages/space/keys/SpaceRecordsPage';
 
 
 const App: React.FC = () => {
@@ -16,7 +16,7 @@ const App: React.FC = () => {
           <Route index element={<SpacesListPage />} />
           <Route path={'space'}>
             <Route path={':space'}>
-              <Route index element={<SpaceKeysListPage />} />
+              <Route index element={<SpaceRecordsPage />} />
             </Route>
           </Route>
         </Route>

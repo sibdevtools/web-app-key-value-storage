@@ -1,12 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Button, ButtonGroup, Col, Container, Form, Row } from 'react-bootstrap';
-import { ArrowLeft01Icon, Delete01Icon, FloppyDiskIcon } from 'hugeicons-react';
+import { ArrowLeft01Icon, Delete01Icon, FloppyDiskIcon, PlusSignIcon } from 'hugeicons-react';
 import { contextPath } from '../../../const/common.const';
 import { useNavigate, useParams } from 'react-router-dom';
 import { deleteKey, getKeys, getValue, setValue, ValueHolder } from '../../../api/api';
 import { CustomTable, Loader } from '@sibdevtools/frontend-common';
 import { CustomTableParts } from '@sibdevtools/frontend-common/dist/components/custom-table/types';
 import { getViewRepresentation, viewRepresentationToBase64, ViewType } from '../../../utils/view';
+import { RecordCreateModal } from './RecordCreateModal';
 
 interface CachedValue {
   data?: ValueHolder;
@@ -16,11 +17,12 @@ interface CachedValue {
   error?: string;
 }
 
-const SpaceKeysListPage: React.FC = () => {
+const SpaceRecordsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [keys, setKeys] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [minorError, setMinorError] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const navigate = useNavigate();
   const { space } = useParams();
 
@@ -103,7 +105,7 @@ const SpaceKeysListPage: React.FC = () => {
                 onChange={(e) => setValuesCache(prev => ({
                   ...prev,
                   [keyName]: {
-                   ...prev[keyName],
+                    ...prev[keyName],
                     viewType: e.target.value as ViewType,
                   } as CachedValue,
                 }))}
@@ -211,18 +213,10 @@ const SpaceKeysListPage: React.FC = () => {
         return;
       }
 
-      setValuesCache(prev => ({
-        ...prev,
-        [key]: {
-          data: {
-            value: value,
-            meta: response.data.body,
-          },
-          viewType: 'base64',
-          loading: false,
-          changed: false,
-        }
-      }));
+      setValuesCache(prev => {
+        const { [key]: _, ...rest } = prev;
+        return rest;
+      });
     } catch (error) {
       console.error(`Failed to update key: ${key}`, error);
       setMinorError(`Failed to update key: ${key}`);
@@ -241,9 +235,8 @@ const SpaceKeysListPage: React.FC = () => {
 
       setKeys(prev => prev.filter(k => k !== key));
       setValuesCache(prev => {
-        const newCache = { ...prev };
-        delete newCache[key];
-        return newCache;
+        const { [key]: _, ...rest } = prev;
+        return rest;
       });
     } catch (error) {
       console.error('Failed to delete key:', error);
@@ -257,6 +250,10 @@ const SpaceKeysListPage: React.FC = () => {
       fetchKeys();
     }
   }, [space, fetchKeys]);
+
+  const handleAddClick = () => {
+    setShowCreateModal(true);
+  };
 
   return (
     <Container className="mt-4 mb-4">
@@ -272,6 +269,17 @@ const SpaceKeysListPage: React.FC = () => {
         </Col>
         <Col md={6}>
           <span className={'h2'}>Space <code>{space}</code> keys</span>
+        </Col>
+        <Col md={{ span: 1, offset: 1 }}>
+          <ButtonGroup>
+            <Button
+              variant="outline-success"
+              onClick={handleAddClick}
+              title={'Add'}
+            >
+              <PlusSignIcon />
+            </Button>
+          </ButtonGroup>
         </Col>
       </Row>
       <Row className="mt-4">
@@ -351,8 +359,39 @@ const SpaceKeysListPage: React.FC = () => {
           )}
         </Col>
       </Row>
+
+      <RecordCreateModal
+        showModal={showCreateModal}
+        setShowModal={setShowCreateModal}
+        handleSave={async (key: string, value: string, expiredAt: number | undefined) => {
+          try {
+            const response = await setValue({
+              space,
+              key,
+              value,
+              expiredAt,
+            });
+            if (response.status !== 200 || !response.data.success) {
+              setMinorError(`Failed to create key: ${key}`);
+              setShowCreateModal(false);
+              return;
+            }
+
+            setKeys(prev => [...prev, key]);
+            setValuesCache(prev => {
+              const { [key]: _, ...rest } = prev;
+              return rest;
+            });
+          } catch (error) {
+            console.error(`Failed to create key: ${key}`, error);
+            setMinorError(`Failed to create key: ${key}`);
+          } finally {
+            setShowCreateModal(false);
+          }
+        }}
+      />
     </Container>
   );
 };
 
-export default SpaceKeysListPage;
+export default SpaceRecordsPage;
