@@ -17,19 +17,29 @@ export const RecordCreateModal: React.FC<RecordCreateModalProps> = ({
   const [key, setKey] = useState('');
   const [value, setValue] = useState('');
   const [valueViewType, setValueViewType] = useState<ViewType>('base64');
-  const [expiredAt, setExpiredAt] = useState<number | undefined>(undefined);
+  const [expiredAtDate, setExpiredAtDate] = useState<string>('');
+  const [expiredAtTime, setExpiredAtTime] = useState<string>('');
   const [noExpirationDate, setNoExpirationDate] = useState(true);
+
+  const calculateExpiredAt = (): number | undefined => {
+    if (noExpirationDate) {
+      return undefined;
+    }
+    const dateTimeString = `${expiredAtDate}T${expiredAtTime}`;
+    const expiredAt = new Date(dateTimeString);
+    return expiredAt.getTime();
+  };
 
   return (
     <Modal show={showModal} onHide={() => setShowModal(false)}>
-      <Modal.Header closeButton>
-        <Modal.Title>Create New Record</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        <Form onSubmit={() => {
-          handleSave(key, value, noExpirationDate ? undefined : expiredAt);
-          return false;
-        }}>
+      <Form onSubmit={(e) => {
+        e.preventDefault();
+        handleSave(key, value, calculateExpiredAt());
+      }}>
+        <Modal.Header closeButton>
+          <Modal.Title>Create New Record</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
           <Form.Group controlId="keyCode">
             <Form.Label>Key</Form.Label>
             <Form.Control
@@ -58,14 +68,29 @@ export const RecordCreateModal: React.FC<RecordCreateModalProps> = ({
               onChange={(e) => setValue(viewRepresentationToBase64(valueViewType, e.target.value))}
             />
           </Form.Group>
-          <Form.Group controlId="expiratedAt">
+          <Form.Group>
             <Form.Label>Expired At</Form.Label>
             <InputGroup>
               <Form.Control
-                type="number"
-                value={expiredAt ?? ''}
+                id={'expiredAtDate'}
+                type="text"
+                pattern={'^\\d{4}-\\d{2}-\\d{2}$'}
+                value={expiredAtDate}
                 disabled={noExpirationDate}
-                onChange={(e) => setExpiredAt(+e.target.value)}
+                required={true}
+                placeholder={'yyyy-MM-dd'}
+                onChange={(e) => setExpiredAtDate(e.target.value)}
+              />
+              <InputGroup.Text>T</InputGroup.Text>
+              <Form.Control
+                id={'expiredAtTime'}
+                type="text"
+                pattern={'^\\d{2}:\\d{2}:\\d{2}(\.\\d{3})?$'}
+                value={expiredAtTime}
+                disabled={noExpirationDate}
+                required={true}
+                placeholder={'HH:mm:ss.zzz'}
+                onChange={(e) => setExpiredAtTime(e.target.value)}
               />
               <InputGroup.Text>
                 <Form.Check
@@ -76,24 +101,25 @@ export const RecordCreateModal: React.FC<RecordCreateModalProps> = ({
               </InputGroup.Text>
             </InputGroup>
           </Form.Group>
-        </Form>
-      </Modal.Body>
-      <Modal.Footer>
-        <Button
-          variant="secondary"
-          onClick={() => setShowModal(false)}
-          title={'Cancel'}
-        >
-          <Cancel01Icon />
-        </Button>
-        <Button
-          variant="primary"
-          onClick={() => handleSave(key, value, noExpirationDate ? undefined : expiredAt)}
-          title={'Save'}
-        >
-          <FloppyDiskIcon />
-        </Button>
-      </Modal.Footer>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            type={'button'}
+            onClick={() => setShowModal(false)}
+            title={'Cancel'}
+          >
+            <Cancel01Icon />
+          </Button>
+          <Button
+            variant={'primary'}
+            type={'submit'}
+            title={'Save'}
+          >
+            <FloppyDiskIcon />
+          </Button>
+        </Modal.Footer>
+      </Form>
     </Modal>
   );
 };
