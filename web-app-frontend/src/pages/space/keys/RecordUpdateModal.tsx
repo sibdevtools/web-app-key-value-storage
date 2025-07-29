@@ -20,7 +20,10 @@ const formatExpiredAt = (timestamp: number | undefined): { date: string, time: s
   const pad = (num: number) => num.toString().padStart(2, '0');
 
   const formattedDate = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-  const formattedTime = `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}.${date.getMilliseconds().toString().padStart(3, '0')}`;
+  const formattedTime = `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}.${date.getMilliseconds().toString().padStart(
+    3,
+    '0'
+  )}`;
 
   return {
     date: formattedDate,
@@ -40,6 +43,32 @@ export const RecordUpdateModal: React.FC<RecordUpdateModalProps> = ({
   const [expiredAtDate, setExpiredAtDate] = useState<string>(initialDate);
   const [expiredAtTime, setExpiredAtTime] = useState<string>(initialTime);
   const [noExpirationDate, setNoExpirationDate] = useState<boolean>(!spaceRecord.expiredAt);
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/[^\d-]/g, '');
+    if (value.length === 4 || value.length === 7) {
+      if (value.charAt(value.length - 1) !== '-') {
+        value += '-';
+      }
+    }
+    if (value.length > 10) {
+      value = value.slice(0, 10);
+    }
+    setExpiredAtDate(value);
+  };
+
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/[^\d:.]/g, '');
+    if (value.length === 2 || value.length === 5) {
+      if (value.charAt(value.length - 1) !== ':') {
+        value += ':';
+      }
+    }
+    if (value.length > 12) {
+      value = value.slice(0, 12);
+    }
+    setExpiredAtTime(value);
+  };
 
   const calculateExpiredAt = (): number | undefined => {
     if (noExpirationDate) {
@@ -90,7 +119,7 @@ export const RecordUpdateModal: React.FC<RecordUpdateModalProps> = ({
                 disabled={noExpirationDate}
                 required={true}
                 placeholder={'yyyy-MM-dd'}
-                onChange={(e) => setExpiredAtDate(e.target.value)}
+                onChange={handleDateChange}
               />
               <InputGroup.Text>T</InputGroup.Text>
               <Form.Control
@@ -101,7 +130,7 @@ export const RecordUpdateModal: React.FC<RecordUpdateModalProps> = ({
                 disabled={noExpirationDate}
                 required={true}
                 placeholder={'HH:mm:ss.zzz'}
-                onChange={(e) => setExpiredAtTime(e.target.value)}
+                onChange={handleTimeChange}
               />
               <InputGroup.Text>
                 <Form.Check

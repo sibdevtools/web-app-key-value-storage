@@ -21,6 +21,32 @@ export const RecordCreateModal: React.FC<RecordCreateModalProps> = ({
   const [expiredAtTime, setExpiredAtTime] = useState<string>('');
   const [noExpirationDate, setNoExpirationDate] = useState(true);
 
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/[^\d-]/g, '');
+    if (value.length === 4 || value.length === 7) {
+      if (value.charAt(value.length - 1) !== '-') {
+        value += '-';
+      }
+    }
+    if (value.length > 10) {
+      value = value.slice(0, 10);
+    }
+    setExpiredAtDate(value);
+  };
+
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/[^\d:.]/g, '');
+    if (value.length === 2 || value.length === 5) {
+      if (value.charAt(value.length - 1) !== ':') {
+        value += ':';
+      }
+    }
+    if (value.length > 12) {
+      value = value.slice(0, 12);
+    }
+    setExpiredAtTime(value);
+  };
+
   const calculateExpiredAt = (): number | undefined => {
     if (noExpirationDate) {
       return undefined;
@@ -79,7 +105,7 @@ export const RecordCreateModal: React.FC<RecordCreateModalProps> = ({
                 disabled={noExpirationDate}
                 required={true}
                 placeholder={'yyyy-MM-dd'}
-                onChange={(e) => setExpiredAtDate(e.target.value)}
+                onChange={handleDateChange}
               />
               <InputGroup.Text>T</InputGroup.Text>
               <Form.Control
@@ -90,7 +116,7 @@ export const RecordCreateModal: React.FC<RecordCreateModalProps> = ({
                 disabled={noExpirationDate}
                 required={true}
                 placeholder={'HH:mm:ss.zzz'}
-                onChange={(e) => setExpiredAtTime(e.target.value)}
+                onChange={handleTimeChange}
               />
               <InputGroup.Text>
                 <Form.Check
