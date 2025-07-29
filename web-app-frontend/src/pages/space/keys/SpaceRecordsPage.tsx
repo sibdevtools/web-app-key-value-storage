@@ -85,21 +85,26 @@ const SpaceRecordsPage: React.FC = () => {
             </Row>
           </Col>
           <Col xs={8}>
-            <Row>
-              <Form.Select
-                value={cacheItem.viewType}
-                onChange={(e) => setValuesCache(prev => ({
-                  ...prev,
-                  [keyName]: {
-                    ...prev[keyName],
-                    viewType: e.target.value as ViewType,
-                  } as CachedValue,
-                }))}
-                required={true}
-              >
-                <option value={'base64'}>Base64</option>
-                <option value={'raw'}>Raw</option>
-              </Form.Select>
+            <Row className={'mb-4'}>
+              <Col xs={4}>
+                Value View Type
+              </Col>
+              <Col xs={6}>
+                <Form.Select
+                  value={cacheItem.viewType}
+                  onChange={(e) => setValuesCache(prev => ({
+                    ...prev,
+                    [keyName]: {
+                      ...prev[keyName],
+                      viewType: e.target.value as ViewType,
+                    } as CachedValue,
+                  }))}
+                  required={true}
+                >
+                  <option value={'base64'}>Base64</option>
+                  <option value={'raw'}>Raw</option>
+                </Form.Select>
+              </Col>
             </Row>
             <Row>
             <textarea
@@ -133,6 +138,9 @@ const SpaceRecordsPage: React.FC = () => {
   }, [space]);
 
   const loadKeyValue = useCallback(async (key: string) => {
+    if (valuesCache[key]) {
+      return valuesCache[key];
+    }
     setValuesCache(prev => ({
       ...prev,
       [key]: {
@@ -145,6 +153,10 @@ const SpaceRecordsPage: React.FC = () => {
     try {
       const response = await getValue(space, key);
       if (response.data.success) {
+        if (!response.data.body) {
+          setKeys(prev => prev.filter(k => k !== key));
+          return undefined;
+        }
         const cacheItem = {
           data: response.data.body,
           viewType: 'base64',
@@ -333,37 +345,39 @@ const SpaceRecordsPage: React.FC = () => {
         </Col>
       </Row>
 
-      <RecordCreateModal
-        showModal={showCreateModal}
-        setShowModal={setShowCreateModal}
-        handleSave={async (key: string, value: string, expiredAt: number | undefined) => {
-          try {
-            const response = await setValue({
-              space,
-              key,
-              value,
-              expiredAt,
-            });
-            if (response.status !== 200 || !response.data.success) {
+      {showCreateModal && (
+        <RecordCreateModal
+          showModal={showCreateModal}
+          setShowModal={setShowCreateModal}
+          handleSave={async (key: string, value: string, expiredAt: number | undefined) => {
+            try {
+              const response = await setValue({
+                space,
+                key,
+                value,
+                expiredAt,
+              });
+              if (response.status !== 200 || !response.data.success) {
+                setMinorError(`Failed to create key: ${key}`);
+                return;
+              }
+
+              setKeys(prev => [...prev, key]);
+              setValuesCache(prev => {
+                const { [key]: _, ...rest } = prev;
+                return rest;
+              });
+            } catch (error) {
+              console.error(`Failed to create key: ${key}`, error);
               setMinorError(`Failed to create key: ${key}`);
-              return;
+            } finally {
+              setShowCreateModal(false);
             }
+          }}
+        />
+      )}
 
-            setKeys(prev => [...prev, key]);
-            setValuesCache(prev => {
-              const { [key]: _, ...rest } = prev;
-              return rest;
-            });
-          } catch (error) {
-            console.error(`Failed to create key: ${key}`, error);
-            setMinorError(`Failed to create key: ${key}`);
-          } finally {
-            setShowCreateModal(false);
-          }
-        }}
-      />
-
-      {editingRecord && (
+      {showEditModal && editingRecord && (
         <RecordUpdateModal
           showModal={showEditModal}
           setShowModal={setShowEditModal}
