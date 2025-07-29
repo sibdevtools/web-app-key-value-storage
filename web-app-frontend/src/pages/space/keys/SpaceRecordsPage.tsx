@@ -1,20 +1,26 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, Button, ButtonGroup, Col, Container, Form, Row } from 'react-bootstrap';
-import { ArrowLeft01Icon, Delete01Icon, FloppyDiskIcon, PlusSignIcon } from 'hugeicons-react';
+import { ArrowLeft01Icon, Delete01Icon, PencilEdit01Icon, PlusSignIcon } from 'hugeicons-react';
 import { contextPath } from '../../../const/common.const';
 import { useNavigate, useParams } from 'react-router-dom';
 import { deleteKey, getKeys, getValue, setValue, ValueHolder } from '../../../api/api';
 import { CustomTable, Loader } from '@sibdevtools/frontend-common';
 import { CustomTableParts } from '@sibdevtools/frontend-common/dist/components/custom-table/types';
-import { getViewRepresentation, viewRepresentationToBase64, ViewType } from '../../../utils/view';
+import { getViewRepresentation, ViewType } from '../../../utils/view';
 import { RecordCreateModal } from './RecordCreateModal';
+import { RecordUpdateModal } from './RecordUpdateModal';
 
 interface CachedValue {
   data?: ValueHolder;
   viewType: ViewType;
   loading: boolean;
-  changed: boolean;
   error?: string;
+}
+
+export interface SpaceRecord {
+  key: string;
+  value: string;
+  expiredAt: number | undefined;
 }
 
 const SpaceRecordsPage: React.FC = () => {
@@ -23,6 +29,8 @@ const SpaceRecordsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [minorError, setMinorError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<SpaceRecord | null>(null);
   const navigate = useNavigate();
   const { space } = useParams();
 
@@ -36,7 +44,6 @@ const SpaceRecordsPage: React.FC = () => {
   const ExpandableRowContent: React.FC<{ keyName: string }> = ({ keyName }) => {
     const cacheItem = valuesCache[keyName] || { loading: false };
     const { data, loading, error } = cacheItem;
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
       if (!data && !loading && !error) {
@@ -58,27 +65,6 @@ const SpaceRecordsPage: React.FC = () => {
       }
       const d = new Date(amount);
       return d.toISOString();
-    };
-
-    const handleBlur = () => {
-      if (!textareaRef.current) {
-        return;
-      }
-      const newValue = textareaRef.current.value;
-      if (newValue === data?.value) {
-        return;
-      }
-      setValuesCache(prev => ({
-        ...prev,
-        [keyName]: {
-          ...prev[keyName],
-          changed: true,
-          data: {
-            ...prev[keyName].data,
-            value: viewRepresentationToBase64(cacheItem.viewType, newValue),
-          } as ValueHolder,
-        },
-      }));
     };
 
     return (
@@ -117,11 +103,10 @@ const SpaceRecordsPage: React.FC = () => {
             </Row>
             <Row>
             <textarea
-              ref={textareaRef}
               id={`value-${keyName}`}
               className={'form-control'}
-              defaultValue={getViewRepresentation(cacheItem.viewType, data?.value || '')}
-              onBlur={handleBlur}
+              readOnly={true}
+              value={getViewRepresentation(cacheItem.viewType, data?.value || '')}
             />
             </Row>
           </Col>
@@ -160,67 +145,56 @@ const SpaceRecordsPage: React.FC = () => {
     try {
       const response = await getValue(space, key);
       if (response.data.success) {
+        const cacheItem = {
+          data: response.data.body,
+          viewType: 'base64',
+          loading: false
+        } as CachedValue;
         setValuesCache(prev => ({
           ...prev,
-          [key]: {
-            data: response.data.body,
-            viewType: 'base64',
-            changed: false,
-            loading: false
-          }
+          [key]: cacheItem
         }));
-      } else {
-        setValuesCache(prev => ({
-          ...prev,
-          [key]: {
-            viewType: 'base64',
-            loading: false,
-            changed: false,
-            error: 'Failed to fetch value'
-          }
-        }));
+        return cacheItem;
       }
-    } catch (err) {
-      console.error(`Failed to fetch value for key ${key}:`, err);
+      const cacheItem = {
+        viewType: 'base64',
+        loading: false,
+        error: 'Failed to fetch value'
+      } as CachedValue;
       setValuesCache(prev => ({
         ...prev,
-        [key]: {
-          viewType: 'base64',
-          loading: false,
-          changed: false,
-          error: 'Failed to fetch value'
-        }
+        [key]: cacheItem
       }));
+    } catch (err) {
+      console.error(`Failed to fetch value for key ${key}:`, err);
+      const cacheItem = {
+        viewType: 'base64',
+        loading: false,
+        error: 'Failed to fetch value'
+      } as CachedValue;
+      setValuesCache(prev => ({
+        ...prev,
+        [key]: cacheItem
+      }));
+      return cacheItem;
     }
   }, [space]);
 
-  const handleUpdate = async (key: string) => {
-    const cachedValue = valuesCache[key];
-    const value = cachedValue.data?.value;
-    if (value === undefined) {
-      return;
+  const doShowEditModal = async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>, key: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    let cacheItem = valuesCache[key];
+    if (!cacheItem || cacheItem.loading || cacheItem.error) {
+      const rs = await loadKeyValue(key);
+      if (!rs || rs.error) return;
+      cacheItem = rs;
     }
-
-    try {
-      const response = await setValue({
-        space,
-        key,
-        value: value,
-        expiredAt: cachedValue.data?.meta.expiredAt,
-      });
-      if (response.status !== 200 || !response.data.success) {
-        setMinorError(`Failed to update key: ${key}`);
-        return;
-      }
-
-      setValuesCache(prev => {
-        const { [key]: _, ...rest } = prev;
-        return rest;
-      });
-    } catch (error) {
-      console.error(`Failed to update key: ${key}`, error);
-      setMinorError(`Failed to update key: ${key}`);
-    }
+    setEditingRecord({
+      key: key,
+      value: cacheItem.data?.value || '',
+      expiredAt: cacheItem.data?.meta.expiredAt,
+    });
+    setShowEditModal(true);
   };
 
   const handleDelete = async (key: string) => {
@@ -323,11 +297,10 @@ const SpaceRecordsPage: React.FC = () => {
                       <ButtonGroup>
                         <Button
                           variant={'outline-primary'}
-                          onClick={() => handleUpdate(key)}
-                          disabled={!valuesCache[key]?.changed}
-                          title={'Update'}
+                          onClick={(e) => doShowEditModal(e, key)}
+                          title={'Change'}
                         >
-                          <FloppyDiskIcon />
+                          <PencilEdit01Icon />
                         </Button>
                         <Button
                           variant={'danger'}
@@ -373,7 +346,6 @@ const SpaceRecordsPage: React.FC = () => {
             });
             if (response.status !== 200 || !response.data.success) {
               setMinorError(`Failed to create key: ${key}`);
-              setShowCreateModal(false);
               return;
             }
 
@@ -390,6 +362,38 @@ const SpaceRecordsPage: React.FC = () => {
           }
         }}
       />
+
+      {editingRecord && (
+        <RecordUpdateModal
+          showModal={showEditModal}
+          setShowModal={setShowEditModal}
+          spaceRecord={editingRecord}
+          handleSave={async (key: string, value: string, expiredAt: number | undefined) => {
+            try {
+              const response = await setValue({
+                space,
+                key,
+                value,
+                expiredAt,
+              });
+              if (response.status !== 200 || !response.data.success) {
+                setMinorError(`Failed to update key: ${key}`);
+                return;
+              }
+
+              setValuesCache(prev => {
+                const { [key]: _, ...rest } = prev;
+                return rest;
+              });
+            } catch (error) {
+              console.error(`Failed to update key: ${key}`, error);
+              setMinorError(`Failed to update key: ${key}`);
+            } finally {
+              setShowEditModal(false);
+            }
+          }}
+        />
+      )}
     </Container>
   );
 };

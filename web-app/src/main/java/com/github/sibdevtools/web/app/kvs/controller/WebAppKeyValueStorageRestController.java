@@ -86,10 +86,14 @@ public class WebAppKeyValueStorageRestController {
                 .build();
         val rs = keyValueStorageService.set(rq);
         val meta = rs.getBody();
+        val rsExpiredAt = Optional.ofNullable(meta.getExpiredAt())
+                .map(ChronoZonedDateTime::toInstant)
+                .map(Instant::toEpochMilli)
+                .orElse(null);
         val metaRs = ValueMetaRs.builder()
                 .createdAt(meta.getCreatedAt().toInstant().toEpochMilli())
                 .modifiedAt(meta.getModifiedAt().toInstant().toEpochMilli())
-                .expiredAt(expiredAt)
+                .expiredAt(rsExpiredAt)
                 .build();
         return new StandardBodyRs<>(metaRs);
     }

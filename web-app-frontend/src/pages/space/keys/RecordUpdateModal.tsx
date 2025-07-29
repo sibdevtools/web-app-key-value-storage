@@ -2,43 +2,36 @@ import { Button, Form, InputGroup, Modal } from 'react-bootstrap';
 import { Cancel01Icon, FloppyDiskIcon } from 'hugeicons-react';
 import React, { useState } from 'react';
 import { getViewRepresentation, viewRepresentationToBase64, ViewType } from '../../../utils/view';
+import { SpaceRecord } from './SpaceRecordsPage';
 
-export interface RecordCreateModalProps {
+export interface RecordUpdateModalProps {
   showModal: boolean;
   setShowModal: (showModal: boolean) => void;
+  spaceRecord: SpaceRecord;
   handleSave: (key: string, value: string, expiredAt: number | undefined) => void;
 }
 
-export const RecordCreateModal: React.FC<RecordCreateModalProps> = ({
+export const RecordUpdateModal: React.FC<RecordUpdateModalProps> = ({
                                                                       showModal,
                                                                       setShowModal,
+                                                                      spaceRecord,
                                                                       handleSave
                                                                     }) => {
-  const [key, setKey] = useState('');
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState(spaceRecord.value);
   const [valueViewType, setValueViewType] = useState<ViewType>('base64');
-  const [expiredAt, setExpiredAt] = useState<number | undefined>(undefined);
-  const [noExpirationDate, setNoExpirationDate] = useState(true);
+  const [expiredAt, setExpiredAt] = useState<number | undefined>(spaceRecord.expiredAt);
+  const [noExpirationDate, setNoExpirationDate] = useState<boolean>(!spaceRecord.expiredAt);
 
   return (
     <Modal show={showModal} onHide={() => setShowModal(false)}>
       <Modal.Header closeButton>
-        <Modal.Title>Create New Record</Modal.Title>
+        <Modal.Title>Update Record: <code>{spaceRecord.key}</code></Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <Form onSubmit={() => {
-          handleSave(key, value, noExpirationDate ? undefined : expiredAt);
+          handleSave(spaceRecord.key, value, noExpirationDate ? undefined : expiredAt);
           return false;
         }}>
-          <Form.Group controlId="keyCode">
-            <Form.Label>Key</Form.Label>
-            <Form.Control
-              type="text"
-              value={key}
-              onChange={(e) => setKey(e.target.value)}
-              required={true}
-            />
-          </Form.Group>
           <Form.Group controlId="valueViewType">
             <Form.Label>Value View Type</Form.Label>
             <Form.Select
@@ -88,7 +81,7 @@ export const RecordCreateModal: React.FC<RecordCreateModalProps> = ({
         </Button>
         <Button
           variant="primary"
-          onClick={() => handleSave(key, value, noExpirationDate ? undefined : expiredAt)}
+          onClick={() => handleSave(spaceRecord.key, value, noExpirationDate ? undefined : expiredAt)}
           title={'Save'}
         >
           <FloppyDiskIcon />

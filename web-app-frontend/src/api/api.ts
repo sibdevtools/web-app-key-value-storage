@@ -43,7 +43,7 @@ export interface SetValueRq {
 export interface ValueMeta {
   createdAt: number;
   modifiedAt: number;
-  expiredAt: number | undefined | null;
+  expiredAt: number | undefined;
   version: number;
 }
 
