@@ -16,9 +16,15 @@ const formatExpiredAt = (timestamp: number | undefined): { date: string, time: s
     return { date: '', time: '' };
   }
   const date = new Date(timestamp);
+
+  const pad = (num: number) => num.toString().padStart(2, '0');
+
+  const formattedDate = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  const formattedTime = `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}.${date.getMilliseconds().toString().padStart(3, '0')}`;
+
   return {
-    date: date.toISOString().split('T')[0],
-    time: date.toISOString().split('T')[1].slice(0, 12)
+    date: formattedDate,
+    time: formattedTime
   };
 };
 
