@@ -11,6 +11,17 @@ export interface RecordUpdateModalProps {
   handleSave: (key: string, value: string, expiredAt: number | undefined) => void;
 }
 
+const formatExpiredAt = (timestamp: number | undefined): { date: string, time: string } => {
+  if (!timestamp) {
+    return { date: '', time: '' };
+  }
+  const date = new Date(timestamp);
+  return {
+    date: date.toISOString().split('T')[0],
+    time: date.toISOString().split('T')[1].slice(0, 12)
+  };
+};
+
 export const RecordUpdateModal: React.FC<RecordUpdateModalProps> = ({
                                                                       showModal,
                                                                       setShowModal,
@@ -19,19 +30,30 @@ export const RecordUpdateModal: React.FC<RecordUpdateModalProps> = ({
                                                                     }) => {
   const [value, setValue] = useState(spaceRecord.value);
   const [valueViewType, setValueViewType] = useState<ViewType>('base64');
-  const [expiredAt, setExpiredAt] = useState<number | undefined>(spaceRecord.expiredAt);
+  const { date: initialDate, time: initialTime } = formatExpiredAt(spaceRecord.expiredAt);
+  const [expiredAtDate, setExpiredAtDate] = useState<string>(initialDate);
+  const [expiredAtTime, setExpiredAtTime] = useState<string>(initialTime);
   const [noExpirationDate, setNoExpirationDate] = useState<boolean>(!spaceRecord.expiredAt);
+
+  const calculateExpiredAt = (): number | undefined => {
+    if (noExpirationDate) {
+      return undefined;
+    }
+    const dateTimeString = `${expiredAtDate}T${expiredAtTime}`;
+    const expiredAt = new Date(dateTimeString);
+    return expiredAt.getTime();
+  };
 
   return (
     <Modal show={showModal} onHide={() => setShowModal(false)}>
-      <Modal.Header closeButton>
-        <Modal.Title>Update Record: <code>{spaceRecord.key}</code></Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        <Form onSubmit={() => {
-          handleSave(spaceRecord.key, value, noExpirationDate ? undefined : expiredAt);
-          return false;
-        }}>
+      <Form onSubmit={(e) => {
+        e.preventDefault();
+        handleSave(spaceRecord.key, value, calculateExpiredAt());
+      }}>
+        <Modal.Header closeButton>
+          <Modal.Title>Update Record: <code>{spaceRecord.key}</code></Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
           <Form.Group controlId="valueViewType">
             <Form.Label>Value View Type</Form.Label>
             <Form.Select
@@ -51,14 +73,29 @@ export const RecordUpdateModal: React.FC<RecordUpdateModalProps> = ({
               onChange={(e) => setValue(viewRepresentationToBase64(valueViewType, e.target.value))}
             />
           </Form.Group>
-          <Form.Group controlId="expiratedAt">
+          <Form.Group>
             <Form.Label>Expired At</Form.Label>
             <InputGroup>
               <Form.Control
-                type="number"
-                value={expiredAt ?? ''}
+                id={'expiredAtDate'}
+                type="text"
+                pattern={'^\\d{4}-\\d{2}-\\d{2}$'}
+                value={expiredAtDate}
                 disabled={noExpirationDate}
-                onChange={(e) => setExpiredAt(+e.target.value)}
+                required={true}
+                placeholder={'yyyy-MM-dd'}
+                onChange={(e) => setExpiredAtDate(e.target.value)}
+              />
+              <InputGroup.Text>T</InputGroup.Text>
+              <Form.Control
+                id={'expiredAtTime'}
+                type="text"
+                pattern={'^\\d{2}:\\d{2}:\\d{2}(\.\\d{3})?$'}
+                value={expiredAtTime}
+                disabled={noExpirationDate}
+                required={true}
+                placeholder={'HH:mm:ss.zzz'}
+                onChange={(e) => setExpiredAtTime(e.target.value)}
               />
               <InputGroup.Text>
                 <Form.Check
@@ -69,24 +106,25 @@ export const RecordUpdateModal: React.FC<RecordUpdateModalProps> = ({
               </InputGroup.Text>
             </InputGroup>
           </Form.Group>
-        </Form>
-      </Modal.Body>
-      <Modal.Footer>
-        <Button
-          variant="secondary"
-          onClick={() => setShowModal(false)}
-          title={'Cancel'}
-        >
-          <Cancel01Icon />
-        </Button>
-        <Button
-          variant="primary"
-          onClick={() => handleSave(spaceRecord.key, value, noExpirationDate ? undefined : expiredAt)}
-          title={'Save'}
-        >
-          <FloppyDiskIcon />
-        </Button>
-      </Modal.Footer>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            type={'button'}
+            onClick={() => setShowModal(false)}
+            title={'Cancel'}
+          >
+            <Cancel01Icon />
+          </Button>
+          <Button
+            variant={'primary'}
+            type={'submit'}
+            title={'Save'}
+          >
+            <FloppyDiskIcon />
+          </Button>
+        </Modal.Footer>
+      </Form>
     </Modal>
   );
 };
