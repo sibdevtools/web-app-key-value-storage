@@ -37,10 +37,15 @@ const SpacesListPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (space: string) => {
+  const handleDelete = async (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+    space: string
+  ) => {
     if (!window.confirm('Are you sure?')) {
       return;
     }
+    e.preventDefault();
+    e.stopPropagation();
     try {
       const response = await deleteSpace(space);
       if (response.status !== 200 || !response.data.success) {
@@ -140,7 +145,7 @@ const SpacesListPage: React.FC = () => {
                         <ButtonGroup>
                           <Button
                             variant={'danger'}
-                            onClick={() => handleDelete(space)}
+                            onClick={(e) => handleDelete(e, space)}
                             title={'Delete'}
                           >
                             <Delete01Icon />

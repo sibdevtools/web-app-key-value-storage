@@ -192,7 +192,10 @@ const SpaceRecordsPage: React.FC = () => {
     }
   }, [space]);
 
-  const doShowEditModal = async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>, key: string) => {
+  const doShowEditModal = async (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+    key: string
+  ) => {
     e.preventDefault();
     e.stopPropagation();
     let cacheItem = valuesCache[key];
@@ -209,8 +212,13 @@ const SpaceRecordsPage: React.FC = () => {
     setShowEditModal(true);
   };
 
-  const handleDelete = async (key: string) => {
+  const handleDelete = async (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+    key: string
+  ) => {
     if (!window.confirm('Are you sure?')) return;
+    e.preventDefault();
+    e.stopPropagation();
 
     try {
       const response = await deleteKey(space, key);
@@ -316,7 +324,7 @@ const SpaceRecordsPage: React.FC = () => {
                         </Button>
                         <Button
                           variant={'danger'}
-                          onClick={() => handleDelete(key)}
+                          onClick={(e) => handleDelete(e, key)}
                           title={'Delete'}
                         >
                           <Delete01Icon />
