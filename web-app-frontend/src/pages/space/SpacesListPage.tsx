@@ -162,12 +162,13 @@ const SpacesListPage: React.FC = () => {
         </Col>
       </Row>
 
-      {/* Unified Modal for Add and Edit */}
-      <SpaceModal
-        showModal={showModal}
-        setShowModal={setShowModal}
-        handleSave={handleSaveAdd}
-      />
+      {showModal && (
+        <SpaceModal
+          showModal={showModal}
+          setShowModal={setShowModal}
+          handleSave={handleSaveAdd}
+        />
+      )}
     </Container>
   );
 };
